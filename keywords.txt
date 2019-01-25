@@ -1,0 +1,18 @@
+﻿Joystick			KEYWORD1
+calibrate			KEYWORD1
+isCalibrated		KEYWORD1
+initialize			KEYWORD1
+
+setSensivity		KEYWORD1
+getSensivity		KEYWORD1
+
+readX				KEYWORD1
+readY				KEYWORD1
+
+isLeft				KEYWORD1
+isRight				KEYWORD1
+isUp				KEYWORD1
+isDown				KEYWORD1
+
+isPressed			KEYWORD1
+isReleased			KEYWORD1
