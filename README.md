@@ -1,5 +1,16 @@
 # Arduino_Analog_Joystick_Library
-A simple Library for a Arduino 2-axis analog joystick with select button.
+A simple Library for a Arduino 2-axis analog joystick with select button. You can use multiple joysticks at once, given you create a separate object for each one.  
+
+## Release Notes 
+  
+###Version 1.0  
+* added more directions to check (upper-left, upper-right, lower-left, lower-right and center)  
+* calibration checks individual limits of the x- and y-axis in order to calculate the gap  
+* if calibrated readX() and readY() account for it
+* added getStats() to print initial x- and y-values and if calibrated the calibration-data
+  
+###Version 0.9  
+* Initial Upload with incomplete functionality
 
 ## Requirements
   

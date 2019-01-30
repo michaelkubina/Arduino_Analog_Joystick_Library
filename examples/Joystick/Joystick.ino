@@ -15,7 +15,11 @@ void setup() {
   joystick.initialize();
   
   // check serial-monitor for command: move to all outer directions and press button
+  // automatic timeout after 15 seconds
   joystick.calibrate();
+
+  // show all status-values
+  joystick.getStats();
 
   // sets the threshold for registering movement of the joystick
   joystick.setSensivity(5);
@@ -57,6 +61,30 @@ void loop() {
     {
       Serial.println("Joystick is down");
       Serial.println(joystick.readY());
+    }
+
+    // upper-left
+    if(joystick.isUpperLeft())
+    {
+      Serial.println("Joystick is upper-left");
+    }
+
+    // upper-right
+    if(joystick.isUpperRight())
+    {
+      Serial.println("Joystick is upper-right");
+    }
+
+    // lower-left
+    if(joystick.isLowerLeft())
+    {
+      Serial.println("Joystick is lower-left");
+    }
+
+    // lower-right
+    if(joystick.isLowerRight())
+    {
+      Serial.println("Joystick is lower-right");
     }
   }
 

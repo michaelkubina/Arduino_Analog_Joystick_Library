@@ -45,11 +45,11 @@ void Joystick::initialize()
 	_offsetX = _initialX - 511;
 	_offsetY = _initialY - 511;
 	
-	_minimalX = _initialX;
-	_maximalX = _initialX;
+	_leftGap = _initialX;
+	_rightGap = _initialX;
 	
-	_minimalY = _initialY;
-	_maximalY = _initialY;
+	_upperGap = _initialY;
+	_lowerGap = _initialY;
 };
 
 /*
@@ -58,79 +58,109 @@ void Joystick::initialize()
 
 void Joystick::calibrate()
 {
-	// Debug
-	Serial.println("### INITIALIZED ###");
+	// Requires the joystick to be moved to the limits in all directions
+	// Confirm by pressing the select button
 	
-	Serial.print(" Initial X: ");
-	Serial.print(_initialX);
-	Serial.print(" Offset: ");
-	Serial.print(_offsetX);
+	int leftLimit = _initialX;
+	int rightLimit = _initialX;
+	int upperLimit = _initialY;
+	int lowerLimit = _initialY;
 	
-	Serial.println("");
-	
-	Serial.print(" Initial Y: ");
-	Serial.print(_initialY);
-	Serial.print(" Offset: ");
-	Serial.print(_offsetY);
-	
-	Serial.println("");
-	
-	Serial.println("### MOVE JOYSTICK IN ALL DIRECTIONS AND PRESS BUTTON TO CONFIRM ###");
+	// set starting-time of calibration for timeout
+	unsigned long calibrationStarted = millis();
 	
 	if(!isCalibrated())
 	{
 		while(!isPressed())
 		{		
-			// Minimal X
-			if(readRawX() < _minimalX)
+			// lowest x-value
+			if(readRawX() < leftLimit)
 			{
-				_minimalX = readRawX();
+				leftLimit = readRawX();
 			}
 			
-			// Maximum X
-			if(readRawX() > _maximalX)
+			// highest x-value
+			if(readRawX() > rightLimit)
 			{
-				_maximalX = readRawX();
+				rightLimit = readRawX();
 			}
 			
-			// Minimal Y
-			if(readRawY() < _minimalY)
+			// lowest y-value
+			if(readRawY() < upperLimit)
 			{
-				_minimalY = readRawY();
+				upperLimit = readRawY();
 			}
 			
-			// Maximal Y
-			if(readRawY() > _maximalY)
+			// highest y-value
+			if(readRawY() > lowerLimit)
 			{
-				_maximalY = readRawY();
+				lowerLimit = readRawY();
+			}
+			
+			// timeout after 15 seconds
+			if(millis() > calibrationStarted + 15000)
+			{
+				return;
 			}
 		}
 	}
 	
+	// calculate the gaps in all directions
+	_leftGap = leftLimit;
+	_rightGap = 1023 - rightLimit;
+	_upperGap = upperLimit;
+	_lowerGap = 1023 - lowerLimit;
+	
 	_isCalibrated = true;
-	
-	// Debug
-	Serial.println("### CALIBRATED ###");
-	
-	Serial.print(" Minimal X: ");
-	Serial.print(_minimalX);
-	Serial.print(" Maximal X: ");
-	Serial.print(_maximalX);
-	
-	Serial.println("");
-	
-	Serial.print(" Minimal Y: ");
-	Serial.print(_minimalY);
-	Serial.print(" Maximal Y: ");
-	Serial.print(_maximalY);
-	
-	Serial.println("");
 	
 };
 
 bool Joystick::isCalibrated()
 {
 	return _isCalibrated;
+};
+
+void Joystick::getStats()
+{
+	// Debug
+	Serial.println("### STATUS ###");
+	
+	Serial.print(" Initial X: ");
+	Serial.print(_initialX);
+	Serial.print(" Offset from center: ");
+	Serial.print(_offsetX);
+	
+	Serial.println("");
+	
+	Serial.print(" Initial Y: ");
+	Serial.print(_initialY);
+	Serial.print(" Offset from center: ");
+	Serial.print(_offsetY);
+	
+	Serial.println("");
+	
+	if(isCalibrated())
+	{
+		Serial.println("### CALIBRATION DATA ###");
+		
+		Serial.print(" Far left (raw): ");
+		Serial.print(_leftGap);
+		Serial.print(" Far right (raw): ");
+		Serial.print(1023 - _rightGap);
+		
+		Serial.println("");
+		
+		Serial.print(" Far up (raw): ");
+		Serial.print(1023 - _upperGap);
+		Serial.print(" Far down (raw): ");
+		Serial.print(_lowerGap);
+		
+		Serial.println("");
+	}
+	else
+	{
+		Serial.println("### NO CALIBRATION DATA ###");
+	}
 };
 
 /*
@@ -170,6 +200,8 @@ int Joystick::readRawY()
 
 /*
  *	Read a cleaned-up analog value of the joystick
+ *  The offset from the center theoretical center is taken into account,
+ *	so that the center is at both zero x and y
  *	Range: 	-511 to +512
  *	Error:	+/- offset
  */
@@ -194,16 +226,33 @@ int Joystick::readX()
 	int cleanX = readCleanX();
 	int x = 0;
 	
-	if(cleanX < 0)
+	if(!isCalibrated())
 	{
-		float percentX = static_cast<float> (cleanX) / static_cast<float> (511+_offsetX) * 100;
-		x = static_cast<int>(percentX);
+		if(cleanX < 0)
+		{
+			float percentX = static_cast<float> (cleanX) / static_cast<float> (511+_offsetX) * 100;
+			x = static_cast<int>(percentX);
+		}
+		
+		if(cleanX > 0)
+		{
+			float percentX = static_cast<float> (cleanX) / static_cast<float> (511-_offsetX) * 100;
+			x = static_cast<int>(percentX);
+		}
 	}
-	
-	if(cleanX > 0)
+	else
 	{
-		float percentX = static_cast<float> (cleanX) / static_cast<float> (511-_offsetX) * 100;
-		x = static_cast<int>(percentX);
+		if(cleanX < 0)
+		{
+			float percentX = static_cast<float> (cleanX) / static_cast<float> (511+_offsetX-_leftGap) * 100;
+			x = static_cast<int>(percentX);
+		}
+		
+		if(cleanX > 0)
+		{
+			float percentX = static_cast<float> (cleanX) / static_cast<float> (511-_offsetX-_rightGap) * 100;
+			x = static_cast<int>(percentX);
+		}
 	}
 	
 	return x;
@@ -214,16 +263,33 @@ int Joystick::readY()
 	int cleanY = readCleanY();
 	int y = 0;
 	
-	if(cleanY < 0)
+	if(!isCalibrated())
 	{
-		float percentY = static_cast<float> (cleanY) / static_cast<float> (511+_offsetY) * 100;
-		y = static_cast<int>(percentY);
+		if(cleanY < 0)
+		{
+			float percentY = static_cast<float> (cleanY) / static_cast<float> (511+_offsetY) * 100;
+			y = static_cast<int>(percentY);
+		}
+		
+		if(cleanY > 0)
+		{
+			float percentY = static_cast<float> (cleanY) / static_cast<float> (511-_offsetY) * 100;
+			y = static_cast<int>(percentY);
+		}
 	}
-	
-	if(cleanY > 0)
+	else
 	{
-		float percentY = static_cast<float> (cleanY) / static_cast<float> (511-_offsetY) * 100;
-		y = static_cast<int>(percentY);
+		if(cleanY < 0)
+		{
+			float percentY = static_cast<float> (cleanY) / static_cast<float> (511+_offsetY-_upperGap) * 100;
+			y = static_cast<int>(percentY);
+		}
+		
+		if(cleanY > 0)
+		{
+			float percentY = static_cast<float> (cleanY) / static_cast<float> (511-_offsetY-_lowerGap) * 100;
+			y = static_cast<int>(percentY);
+		}
 	}
 	
 	return y;
@@ -284,6 +350,66 @@ bool Joystick::isDown()
 	int s = _sensivity;
 	
 	if(cleanY > s)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
+
+bool Joystick::isUpperLeft()
+{
+	if(isUp() && isLeft())
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
+
+bool Joystick::isUpperRight()
+{
+	if(isUp() && isRight())
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
+
+bool Joystick::isLowerLeft()
+{
+	if(isDown() && isLeft())
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
+
+bool Joystick::isLowerRight()
+{
+	if(isDown() && isRight())
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+};
+	
+bool Joystick::isCenter()
+{
+	if(!isUp() && !isDown() && !isLeft() && !isRight())
 	{
 		return true;
 	}

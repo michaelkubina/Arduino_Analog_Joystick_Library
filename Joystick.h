@@ -37,11 +37,10 @@ class Joystick
 		int _offsetX;
 		int _offsetY;
 		
-		int _minimalX;
-		int _minimalY;
-		
-		int _maximalX;
-		int _maximalY;
+		int _leftGap;
+		int _rightGap;
+		int _upperGap;
+		int _lowerGap;
 		
 		bool _isCalibrated;
 
@@ -56,7 +55,8 @@ class Joystick
 		
 		/*
 		 *	Read a cleaned-up analog value of the joystick
-		 *	Range: 	-511 to +512
+		 *  The offset from the center theoretical center is taken into account,
+		 *	so that the center is at both zero x and y
 		 *	Error:	+/- offset
 		 */
 		
@@ -83,6 +83,7 @@ class Joystick
 		
 		void calibrate();
 		bool isCalibrated();
+		void getStats();
 		
 		/*
 		 *	Adjusting the sensivity of the joystick from 0 (LOW) to 10 (HIGH)
@@ -93,6 +94,7 @@ class Joystick
 		
 		/*
 		 *	Read the relative analog values of the joystick in percent
+		 *	Takes calibration into account if calibrated, else the offset from the theoretical center
 		 *	Range: -100 to +100
 		 */
 		
@@ -107,6 +109,13 @@ class Joystick
 		bool isRight();
 		bool isUp();
 		bool isDown();
+		
+		bool isUpperLeft();
+		bool isUpperRight();
+		bool isLowerLeft();
+		bool isLowerRight();
+		
+		bool isCenter();
 		
 		/*
 		 *	Checks for the state of the select-button
